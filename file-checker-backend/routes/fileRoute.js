@@ -24,45 +24,51 @@ router.post('/', upload.single('file'), async (req, res) => {
   try {
     const workbook = xlsx.readFile(file.path);
     const sheetNames = workbook.SheetNames;
-    console.log('Available sheet names:', sheetNames); // Log available sheet names
+    console.log('Available sheet names:', sheetNames);
 
-    const sheetName = 'Strata Lehi Invoicing Asbuilts '; // Specify the sheet name
+    const sheetName = 'Strata Lehi Invoicing Asbuilts '; 
     const sheet = workbook.Sheets[sheetName];
     if (!sheet) {
       console.log('Sheet not found');
       return res.status(400).send('Sheet not found.');
     }
 
-    const data = xlsx.utils.sheet_to_json(sheet, { header: 1, range: 2 }); // Start from the third row (index 2)
-    console.log('Data structure:', data); // Log the structure of the data
+    const range = xlsx.utils.decode_range(sheet['!ref']); // Get full range of the sheet
+    console.log('Sheet range:', range); // Debug the sheet range
 
     const duplicates = [];
     const newEntries = [];
 
-    for (const row of data) {
-      console.log('Processing row:', row); // Log each row being processed
-      const TaskID = row[0]; // Column A
-      const TaskType = row[1]; // Column B
-      const WorkPackage = row[5]; // Column F
-      const CompletedDate = new Date(row[9]); // Column J, convert to Date
-      const TotalLength = parseInt(row[62], 10); // Column BL, convert to integer
-      const QAApproved = row[16]; // Column Q
+    // Loop through specified range (Column A, B, F, J, BL, Q)
+    for (let rowNum = 2; rowNum <= range.e.r; rowNum++) {
+      const TaskID = sheet[`A${rowNum}`]?.v || null;
+      const TaskType = sheet[`B${rowNum}`]?.v || null;
+      const WorkPackage = sheet[`F${rowNum}`]?.v || null;
+      const CompletedDate = sheet[`J${rowNum}`]?.v ? new Date(sheet[`J${rowNum}`].w) : null;
+      const TotalLength = sheet[`BL${rowNum}`]?.v ? Number(sheet[`BL${rowNum}`].v) : 0;
+      const QAApproved = sheet[`Q${rowNum}`]?.v || null;
 
-      console.log('Parsed values:', { TaskID, TaskType, WorkPackage, CompletedDate, TotalLength, QAApproved }); // Log parsed values
+      if (!TaskID) continue; // Skip empty rows
+
+      console.log('Checking TaskID:', TaskID); // Log TaskID being checked
 
       try {
-        const result = await pool.query(
-          'INSERT INTO reports (task_id, task_type, work_package, completed_date, total_length, qa_approved) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-          [TaskID, TaskType, WorkPackage, CompletedDate, TotalLength, QAApproved]
-        );
-        newEntries.push(result.rows[0]);
-      } catch (error) {
-        if (error.code === '23505') { // Unique violation
+        // Check for duplicates in the database
+        const duplicateCheck = await pool.query('SELECT * FROM reports WHERE task_id = $1', [TaskID]);
+        console.log('Duplicate check result for TaskID', TaskID, ':', duplicateCheck.rows); // Log duplicate check result
+        if (duplicateCheck.rows.length > 0) {
           duplicates.push(TaskID);
         } else {
-          console.error('Error inserting data:', error);
-          return res.status(500).send('Error processing file.');
+          const result = await pool.query(
+            'INSERT INTO reports (task_id, task_type, work_package, completed_date, total_length, qa_approved) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [TaskID, TaskType, WorkPackage, CompletedDate, TotalLength, QAApproved]
+          );
+        //   console.log('Inserted new entry:', result.rows[0]); // Log inserted entry
+          newEntries.push(result.rows[0]);
         }
+      } catch (error) {
+        console.error('Error inserting data:', error);
+        return res.status(500).send('Error processing file.');
       }
     }
 

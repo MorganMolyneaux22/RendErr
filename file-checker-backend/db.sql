@@ -1,10 +1,9 @@
 CREATE TABLE reports (
-    id SERIAL PRIMARY KEY,
-    task_id VARCHAR(255) NOT NULL,
-    task_type VARCHAR(255) NOT NULL,
-    work_package VARCHAR(255) NOT NULL,
-    completed_date DATE NOT NULL,
-    total_length FLOAT NOT NULL,
-    qa_approved BOOLEAN NOT NULL,
-    UNIQUE (task_id)
+  id SERIAL PRIMARY KEY,
+  task_id VARCHAR(255) UNIQUE,
+  task_type VARCHAR(255),
+  work_package VARCHAR(255),
+  completed_date TIMESTAMP,
+  total_length INTEGER,
+  qa_approved BOOLEAN
 );

@@ -1,6 +1,6 @@
 const mockDb = {
     query: async (query, values) => {
-      console.log('Mock query executed:', query, values);
+    //   console.log('Mock query executed:', query, values);
       // Simulate a successful insert with a mock response
       if (query.includes('INSERT INTO reports')) {
         return {
