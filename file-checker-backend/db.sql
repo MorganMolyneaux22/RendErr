@@ -5,5 +5,5 @@ CREATE TABLE reports (
   work_package VARCHAR(255),
   completed_date TIMESTAMP,
   total_length INTEGER,
-  qa_approved BOOLEAN
+  qa_approved TIMESTAMP
 );

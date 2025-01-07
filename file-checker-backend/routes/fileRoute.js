@@ -5,8 +5,7 @@ const router = express.Router();
 require('dotenv').config();
 
 const upload = multer({ dest: 'uploads/' });
-const isLocal = process.env.NODE_ENV === 'local';
-const pool = isLocal ? require('../mockDb') : new (require('pg').Pool)({
+const pool = new (require('pg').Pool)({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
   database: process.env.DB_NAME,
@@ -46,7 +45,7 @@ router.post('/', upload.single('file'), async (req, res) => {
       const WorkPackage = sheet[`F${rowNum}`]?.v || null;
       const CompletedDate = sheet[`J${rowNum}`]?.v ? new Date(sheet[`J${rowNum}`].w) : null;
       const TotalLength = sheet[`BL${rowNum}`]?.v ? Number(sheet[`BL${rowNum}`].v) : 0;
-      const QAApproved = sheet[`Q${rowNum}`]?.v || null;
+      const QAApproved = sheet[`Q${rowNum}`]?.v ? new Date(sheet[`Q${rowNum}`].w) : null;
 
       if (!TaskID) continue; // Skip empty rows
 
@@ -63,7 +62,7 @@ router.post('/', upload.single('file'), async (req, res) => {
             'INSERT INTO reports (task_id, task_type, work_package, completed_date, total_length, qa_approved) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
             [TaskID, TaskType, WorkPackage, CompletedDate, TotalLength, QAApproved]
           );
-        //   console.log('Inserted new entry:', result.rows[0]); // Log inserted entry
+          console.log('Inserted new entry:', result.rows[0]); // Log inserted entry
           newEntries.push(result.rows[0]);
         }
       } catch (error) {

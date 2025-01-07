@@ -27,10 +27,11 @@ const uploadFile = async (req, res) => {
             if (result.rowCount > 0) {
                 duplicates.push(reportId);
             } else {
-                await pool.query(
-                    'INSERT INTO reports (report_id, data) VALUES ($1, $2)',
+                const result = await pool.query(
+                    'INSERT INTO reports (report_id, data) VALUES ($1, $2) RETURNING *',
                     [reportId, reportData]
                 );
+                console.log('Inserted data:', result.rows[0]);
                 newEntries.push(reportId);
             }
         }
