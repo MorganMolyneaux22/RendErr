@@ -56,7 +56,7 @@ router.post('/', upload.single('file'), async (req, res) => {
         const duplicateCheck = await pool.query('SELECT * FROM reports WHERE task_id = $1', [TaskID]);
         console.log('Duplicate check result for TaskID', TaskID, ':', duplicateCheck.rows); // Log duplicate check result
         if (duplicateCheck.rows.length > 0) {
-          duplicates.push(TaskID);
+          duplicates.push(duplicateCheck.rows[0]);
         } else {
           const result = await pool.query(
             'INSERT INTO reports (task_id, task_type, work_package, completed_date, total_length, qa_approved) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',

@@ -17,5 +17,8 @@
     "multer": "^1.4.5-lts.1",
     "pg": "^8.13.1",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "svelte-headless-table": "^0.18.3"
   }
 }
